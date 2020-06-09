@@ -5,8 +5,8 @@ bin_PROGRAMS=knxtool
 proglibdir=$(libexecdir)/knxd
 proglib_PROGRAMS=eibread-cgi eibwrite-cgi
 
-LDADD=../client/c/libeibclient.la
-knxtool_SOURCES=common.h common.c knxtool.c 
+LDADD=../client/c/libeibclient.la -lmosquitto
+knxtool_SOURCES=common.h common.c knxtool.c mqttbridge.c
 eibread_cgi_SOURCES=common.h common.c eibread-cgi.c 
 eibwrite_cgi_SOURCES=common.h common.c eibwrite-cgi.c 
 

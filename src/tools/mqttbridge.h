@@ -1,0 +1,2 @@
+
+int mqttbridge (EIBConnection *con);

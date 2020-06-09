@@ -22,6 +22,7 @@
 
 #include "common.h"
 #include "path.h"
+#include "mqttbridge.h"
 #include <time.h>
 #include <fcntl.h>
 #include <string.h>
@@ -82,7 +83,7 @@ msetkey grouplisten groupresponse groupsresponse groupsocketlisten groupsocketre
 vbusmonitor1poll groupreadresponse groupcacheenable groupcachedisable groupcacheclear groupcacheremove \n\
 groupcachereadsync groupcacheread mwriteplain mrestart groupsocketwrite groupsocketswrite \n\
 xpropread xpropwrite groupcachelastupdates busmonitor3 vbusmonitor3 eibread-cgi eibwrite-cgi \n\
-vbusmonitor1time\n");
+vbusmonitor1time mqttbridge\n");
       return 0;
     }
 
@@ -1598,6 +1599,17 @@ lp1:
         die ("Write failed");
       printHex (len, res);
     }
+  else if (strcmp (prog, "mqttbridge") == 0)
+    {
+      if (ac < 2)
+        die ("usage: %s url", prog);
+      con = open_con(ag[1]);
+      int rc;
+      rc = mqttbridge(con);
+      if (rc) {
+          die ("mqttbridge terminated with error: %i", rc);
+      }
+    }
   else
     {
       char *path = malloc (strlen (PKGLIBDIR) + strlen (prog) + 2);
@@ -1610,3 +1622,4 @@ out:
   EIBClose (con);
   return 0;
 }
+// vim:expandtab
