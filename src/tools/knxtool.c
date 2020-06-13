@@ -1601,11 +1601,15 @@ lp1:
     }
   else if (strcmp (prog, "mqttbridge") == 0)
     {
-      if (ac < 2)
-        die ("usage: %s url", prog);
+      if (ac < 5) {
+        die ("usage: %s knxd_url mqttbroker_host mqttbroker_port mqtt_topic", prog);
+      }
       con = open_con(ag[1]);
+      const char *broker_host = ag[2];
+      const int broker_port = atoi(ag[3]);
+      const char *pub_topic = ag[4];
       int rc;
-      rc = mqttbridge(con);
+      rc = mqttbridge(con, broker_host, broker_port, pub_topic);
       if (rc) {
           die ("mqttbridge terminated with error: %i", rc);
       }

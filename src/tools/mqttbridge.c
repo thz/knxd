@@ -28,20 +28,33 @@
 
 #include <mosquitto.h>
 
-static struct mosquitto *mosq = NULL;
-static int mosq_connected = 0;
+typedef struct {
+    const char *broker_host;
+    int broker_port;
+    int mosq_connected;
+    struct mosquitto *mosq;
+} mqttbridge_ctx_t;
 
-void mqttbridge_ensure_init();
-void mqttbridge_ensure_connect();
-int publish(uint8_t *payload);
+void mqttbridge_ensure_init(mqttbridge_ctx_t *ctx);
+void mqttbridge_ensure_connect(mqttbridge_ctx_t *ctx);
+int publish(mqttbridge_ctx_t *ctx, uint8_t *payload, const char *topic);
 
 int
-mqttbridge (EIBConnection *con)
+mqttbridge (EIBConnection *con, const char *broker_host, const int broker_port, const char *topic)
 {
   uint8_t buf[255];
   int len;
   eibaddr_t dest;
   eibaddr_t src;
+
+  mqttbridge_ctx_t *ctx = malloc(sizeof(mqttbridge_ctx_t));
+  if (!ctx) {
+      die("failed to allocate for mqttbrige context");
+  }
+  ctx->broker_host = broker_host;
+  ctx->broker_port = broker_port;
+  ctx->mosq_connected = 0;
+  ctx->mosq = NULL;
 
   /* Buffering stdout is almost never what we want */
   setvbuf(stdout, NULL, _IOLBF, 0);
@@ -118,7 +131,7 @@ mqttbridge (EIBConnection *con)
                   }
               }
 
-              publish(mqttBuf);
+              publish(ctx, mqttBuf, topic);
           }
       }
   }
@@ -127,41 +140,40 @@ mqttbridge (EIBConnection *con)
   return 0;
 }
 
-int publish(uint8_t *payload) {
-    mqttbridge_ensure_connect();
-    printf("mqtt payload: %s\n", payload);
-    int rc = mosquitto_publish(mosq,
-            NULL, "knx/write", strlen(payload), payload, 2, true);
+int publish(mqttbridge_ctx_t *ctx, uint8_t *payload, const char *topic) {
+    mqttbridge_ensure_connect(ctx);
+    printf("Publishing to topic %s: %s\n", topic, payload);
+    int rc = mosquitto_publish(ctx->mosq, NULL, topic, strlen(payload), payload, 2, false);
     if (rc != MOSQ_ERR_SUCCESS) {
-        die("failed to connect.");
+        die("failed to publish. rc==%d.", rc);
     }
 }
 
-void mqttbridge_ensure_connect() {
+void mqttbridge_ensure_connect(mqttbridge_ctx_t *ctx) {
     int rc;
-    mqttbridge_ensure_init();
-    if (!mosq_connected) {
-        rc = mosquitto_connect(mosq, "127.0.0.1", 1883, 15);
+    mqttbridge_ensure_init(ctx);
+    if (!ctx->mosq_connected) {
+        rc = mosquitto_connect(ctx->mosq, ctx->broker_host, ctx->broker_port, 15);
         if (rc != MOSQ_ERR_SUCCESS) {
-            die("failed to connect.");
+            die("failed to connect. rc==%d.", rc);
         }
-        mosq_connected=1;
-        rc = mosquitto_loop_start(mosq);
+        ctx->mosq_connected=1;
+        rc = mosquitto_loop_start(ctx->mosq);
         if (rc != MOSQ_ERR_SUCCESS) {
-            die("failed to loop.");
+            die("failed to start mosquitto loop. rc==%d.", rc);
         }
     }
 }
 
-void mqttbridge_ensure_init() {
-    if (mosq==NULL) {
+void mqttbridge_ensure_init(mqttbridge_ctx_t *ctx) {
+    if (ctx->mosq==NULL) {
         mosquitto_lib_init();
-        mosq = mosquitto_new(NULL, true, NULL);
-        if(!mosq){
+        ctx->mosq = mosquitto_new(NULL, true, NULL);
+        if(!ctx->mosq){
             if (errno) {
-                printf("failed to initialize mosquitto: %s\n", strerror(errno));
+                die("failed to initialize mosquitto: %s", strerror(errno));
             }
-            exit(1);
+            die("failed to initialize mosquitto.");
         }
     }
 }
