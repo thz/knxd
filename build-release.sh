@@ -1,7 +1,8 @@
 #!/bin/bash -e
 
 MQTTBRIDGE_VERSION=0.1.0
-PACKAGE_VERSION=0
+PACKAGE_VERSION=1
+
 VERSION="${MQTTBRIDGE_VERSION}-${PACKAGE_VERSION}"
 
 die() {
@@ -16,6 +17,9 @@ MACH=$(uname -m)
 
 IMAGE="thzpub/knxd:${ARCH}-${VERSION}"
 docker build -t "$IMAGE" .
-docker push "$IMAGE"
+echo "Built $IMAGE"
 
-echo "Pushed $IMAGE"
+if [ "$1" = "--push" ]; then
+	docker push "$IMAGE"
+	echo "Pushed $IMAGE"
+fi
