@@ -14,3 +14,4 @@ RUN sh bootstrap.sh
 RUN ./configure
 RUN make
 RUN make install
+RUN ldconfig
