@@ -28,6 +28,8 @@
 
 #include <mosquitto.h>
 
+#define MAX_TOPIC_LEN 64
+
 typedef struct {
     const char *broker_host;
     int broker_port;
@@ -46,6 +48,10 @@ mqttbridge (EIBConnection *con, const char *broker_host, const int broker_port, 
   int len;
   eibaddr_t dest;
   eibaddr_t src;
+
+  if (strlen(topic) > MAX_TOPIC_LEN) {
+      die("topic too long");
+  }
 
   mqttbridge_ctx_t *ctx = malloc(sizeof(mqttbridge_ctx_t));
   if (!ctx) {
@@ -108,7 +114,7 @@ mqttbridge (EIBConnection *con, const char *broker_host, const int broker_port, 
           printf ("\n");
 
           if ((buf[1] & 0xC0) == 0x80) { // write
-              uint8_t mqttBuf[255], tmpBuf[32];
+              uint8_t mqttBuf[255], tmpBuf[32], subTopic[MAX_TOPIC_LEN+32];
               char cutShort = 0;
 
               snprintf(mqttBuf, sizeof(mqttBuf)-1, "Write %d/%d/%d --> ", (dest >> 11) & 0x1f, (dest >> 8) & 0x07, (dest) & 0xff);
@@ -132,6 +138,10 @@ mqttbridge (EIBConnection *con, const char *broker_host, const int broker_port, 
               }
 
               publish(ctx, mqttBuf, topic);
+
+              snprintf(subTopic, sizeof(subTopic)-1, "%s/%d/%d/%d", topic,
+                      (dest >> 11) & 0x1f, (dest >> 8) & 0x07, (dest) & 0xff);
+              publish(ctx, mqttBuf, subTopic);
           }
       }
   }
