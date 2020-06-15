@@ -6,7 +6,7 @@ proglibdir=$(libexecdir)/knxd
 proglib_PROGRAMS=eibread-cgi eibwrite-cgi
 
 LDADD=../client/c/libeibclient.la -lmosquitto
-knxtool_SOURCES=common.h common.c knxtool.c mqttbridge.c
+knxtool_SOURCES=common.h common.c knxtool.c mqtt.c mqttsub.c mqttpub.c
 eibread_cgi_SOURCES=common.h common.c eibread-cgi.c 
 eibwrite_cgi_SOURCES=common.h common.c eibwrite-cgi.c 
 

@@ -26,23 +26,12 @@
 #include <sys/time.h>
 #endif
 
-#include <mosquitto.h>
+#include "mqtt_knx.h"
 
 #define MAX_TOPIC_LEN 64
 
-typedef struct {
-    const char *broker_host;
-    int broker_port;
-    int mosq_connected;
-    struct mosquitto *mosq;
-} mqttbridge_ctx_t;
-
-void mqttbridge_ensure_init(mqttbridge_ctx_t *ctx);
-void mqttbridge_ensure_connect(mqttbridge_ctx_t *ctx);
-int publish(mqttbridge_ctx_t *ctx, uint8_t *payload, const char *topic);
-
 int
-mqttbridge (EIBConnection *con, const char *broker_host, const int broker_port, const char *topic)
+mqttpub (EIBConnection *con, const char *broker_host, const int broker_port, const char *topic)
 {
   uint8_t buf[255];
   int len;
@@ -60,6 +49,7 @@ mqttbridge (EIBConnection *con, const char *broker_host, const int broker_port, 
   ctx->broker_host = broker_host;
   ctx->broker_port = broker_port;
   ctx->mosq_connected = 0;
+  ctx->topic = topic;
   ctx->mosq = NULL;
 
   /* Buffering stdout is almost never what we want */
@@ -148,44 +138,6 @@ mqttbridge (EIBConnection *con, const char *broker_host, const int broker_port, 
 
   EIBClose (con);
   return 0;
-}
-
-int publish(mqttbridge_ctx_t *ctx, uint8_t *payload, const char *topic) {
-    mqttbridge_ensure_connect(ctx);
-    printf("Publishing to topic %s: %s\n", topic, payload);
-    int rc = mosquitto_publish(ctx->mosq, NULL, topic, strlen(payload), payload, 2, false);
-    if (rc != MOSQ_ERR_SUCCESS) {
-        die("failed to publish. rc==%d.", rc);
-    }
-}
-
-void mqttbridge_ensure_connect(mqttbridge_ctx_t *ctx) {
-    int rc;
-    mqttbridge_ensure_init(ctx);
-    if (!ctx->mosq_connected) {
-        rc = mosquitto_connect(ctx->mosq, ctx->broker_host, ctx->broker_port, 15);
-        if (rc != MOSQ_ERR_SUCCESS) {
-            die("failed to connect. rc==%d.", rc);
-        }
-        ctx->mosq_connected=1;
-        rc = mosquitto_loop_start(ctx->mosq);
-        if (rc != MOSQ_ERR_SUCCESS) {
-            die("failed to start mosquitto loop. rc==%d.", rc);
-        }
-    }
-}
-
-void mqttbridge_ensure_init(mqttbridge_ctx_t *ctx) {
-    if (ctx->mosq==NULL) {
-        mosquitto_lib_init();
-        ctx->mosq = mosquitto_new(NULL, true, NULL);
-        if(!ctx->mosq){
-            if (errno) {
-                die("failed to initialize mosquitto: %s", strerror(errno));
-            }
-            die("failed to initialize mosquitto.");
-        }
-    }
 }
 
 // vim:expandtab

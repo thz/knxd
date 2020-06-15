@@ -22,7 +22,7 @@
 
 #include "common.h"
 #include "path.h"
-#include "mqttbridge.h"
+#include "mqtt_knx.h"
 #include <time.h>
 #include <fcntl.h>
 #include <string.h>
@@ -83,7 +83,7 @@ msetkey grouplisten groupresponse groupsresponse groupsocketlisten groupsocketre
 vbusmonitor1poll groupreadresponse groupcacheenable groupcachedisable groupcacheclear groupcacheremove \n\
 groupcachereadsync groupcacheread mwriteplain mrestart groupsocketwrite groupsocketswrite \n\
 xpropread xpropwrite groupcachelastupdates busmonitor3 vbusmonitor3 eibread-cgi eibwrite-cgi \n\
-vbusmonitor1time mqttbridge\n");
+vbusmonitor1time mqttpub mqttsub\n");
       return 0;
     }
 
@@ -1599,7 +1599,7 @@ lp1:
         die ("Write failed");
       printHex (len, res);
     }
-  else if (strcmp (prog, "mqttbridge") == 0)
+  else if (strcmp (prog, "mqttsub") == 0)
     {
       if (ac < 5) {
         die ("usage: %s knxd_url mqttbroker_host mqttbroker_port mqtt_topic", prog);
@@ -1609,9 +1609,24 @@ lp1:
       const int broker_port = atoi(ag[3]);
       const char *pub_topic = ag[4];
       int rc;
-      rc = mqttbridge(con, broker_host, broker_port, pub_topic);
+      rc = mqttsub(con, broker_host, broker_port, pub_topic);
       if (rc) {
-          die ("mqttbridge terminated with error: %i", rc);
+          die ("mqttsub terminated with error: %i", rc);
+      }
+    }
+  else if (strcmp (prog, "mqttpub") == 0)
+    {
+      if (ac < 5) {
+        die ("usage: %s knxd_url mqttbroker_host mqttbroker_port mqtt_topic", prog);
+      }
+      con = open_con(ag[1]);
+      const char *broker_host = ag[2];
+      const int broker_port = atoi(ag[3]);
+      const char *pub_topic = ag[4];
+      int rc;
+      rc = mqttpub(con, broker_host, broker_port, pub_topic);
+      if (rc) {
+          die ("mqttpub terminated with error: %i", rc);
       }
     }
   else
