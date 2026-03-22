@@ -1,3 +1,17 @@
+knxd (MQTT bridge fork)
+====
+
+This is a fork of [knxd/knxd](https://github.com/knxd/knxd) that adds an
+MQTT bridge for KNX. The main additions are `mqttpub` and `mqttsub` applets
+that allow publishing KNX group telegrams to MQTT topics and injecting KNX
+messages from MQTT. The fork also includes a Dockerfile for containerized
+builds, multi-arch CI via GitHub Actions (amd64, arm/v7, arm64), and
+multi-arch container images published to GHCR.
+
+---
+
+Original README follows:
+
 knxd [![Build Status](https://travis-ci.org/knxd/knxd.svg)](https://travis-ci.org/knxd/knxd)
 ====
 
