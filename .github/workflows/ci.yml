@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     tags:
-      - 'v*'
+      - 'bridge/v*'
 
 env:
   IMAGE: ghcr.io/${{ github.repository }}
@@ -96,6 +96,8 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.IMAGE }}
+          tags: |
+            type=match,pattern=bridge/v(.*),group=1,prefix=bridge-
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
